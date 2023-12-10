@@ -1,5 +1,3 @@
-![image](https://github.com/showint108/kubernetes/assets/142475191/1799f73f-d87a-4e36-8e38-fa403c03a4a0)# kubernetes
-
 ## container runtime
 
 Containers are lightweight, portable, and isolated environments that encapsulate an application and its dependencies, allowing for consistent deployment across various environments.
@@ -66,4 +64,4 @@ Key components and concepts related to the OCI standard include:
 
 Docker relies on containerd as its default and primary container runtime. When you run a container using Docker, it utilizes containerd for the low-level container operations. Docker builds on top of containerd, adding features and a higher-level user interface to simplify container management.
 
-
+![image](https://github.com/showint108/kubernetes/assets/142475191/1799f73f-d87a-4e36-8e38-fa403c03a4a0)# containerd
