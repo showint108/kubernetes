@@ -97,15 +97,8 @@ kubectl config set-context $(kubectl config current-context) --namespace=<namesp
   kubectl apply -f quota.yaml
   ```
 
-### Advanced Namespace Management
-
 **Get All Namespace Resources:**
 To see all resources in a specific namespace, you can use:
 ```bash
 kubectl api-resources --verbs=list --namespaced=true | awk '{print $1}' | xargs -n 1 kubectl get --show-kind --ignore-not-found -n <namespace-name>
 ```
-
-**Namespace Resource Limits:**
-- Resource limits are set using ResourceQuotas as shown above. Limits can include CPU, memory, storage, and more.
-
-By understanding and using these commands and concepts, you can manage namespaces in your Kubernetes cluster more effectively, ensuring efficient resource usage and better isolation between different teams or projects.
