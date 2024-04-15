@@ -102,3 +102,110 @@ To see all resources in a specific namespace, you can use:
 ```bash
 kubectl api-resources --verbs=list --namespaced=true | awk '{print $1}' | xargs -n 1 kubectl get --show-kind --ignore-not-found -n <namespace-name>
 ```
+
+# IMPERATIVE VS DECLERATIVE
+
+### Imperative vs Declarative Approaches in Kubernetes
+
+#### Imperative Commands
+
+**Why are commands written with `kubectl` called imperative?**
+- Imperative commands in Kubernetes directly specify the steps required to achieve a desired state. They focus on performing operations (create, delete, update) directly on resources and are akin to giving direct commands to achieve a result.
+- Example: `kubectl create deployment nginx --image=nginx`
+
+#### Declarative Management
+
+**Why are YAML files called declarative?**
+- Declarative configuration specifies the desired state of the resource, and Kubernetes works to ensure that the actual state matches the desired state automatically. It is more about what you want as the final outcome rather than how you get there.
+- Example: Using a YAML file to specify that a deployment should exist with a specific configuration, and Kubernetes maintains this state.
+
+### Creating Resources
+
+**How to create a resource using the imperative way?**
+- Example: Creating a deployment imperatively:
+  ```bash
+  kubectl create deployment nginx --image=nginx
+  ```
+
+**How to create a resource using the declarative way?**
+- Example: Creating a deployment declaratively:
+  1. Write a YAML file named `nginx-deployment.yaml`:
+     ```yaml
+     apiVersion: apps/v1
+     kind: Deployment
+     metadata:
+       name: nginx
+     spec:
+       selector:
+         matchLabels:
+           app: nginx
+       replicas: 2
+       template:
+         metadata:
+           labels:
+             app: nginx
+         spec:
+           containers:
+           - name: nginx
+             image: nginx
+             ports:
+             - containerPort: 80
+     ```
+  2. Apply the configuration:
+     ```bash
+     kubectl apply -f nginx-deployment.yaml
+     ```
+
+### Preferences in Usage
+
+**Why is the declarative way preferred?**
+- **Autocorrection:** The declarative approach continuously corrects any divergence between the desired state specified in YAML files and the actual state of the cluster.
+- **Idempotency:** Applying the same declarative configuration multiple times does not result in errors or unintended effects, which can happen with some imperative commands if used repeatedly.
+- **Version Control:** Declarative files can be version-controlled, providing a history of changes and the ability to revert or apply configurations across different environments.
+
+### Why Certain Commands are Considered Imperative
+
+**Why are `kubectl replace`, `kubectl create`, and `kubectl delete` considered imperative?**
+- These commands explicitly tell Kubernetes what to do, often specifying both the action and the object. There's no automatic error correction or state management—if something is wrong after execution, these commands don't attempt to fix the issue on their own.
+
+### Differences in Commands
+
+**`kubectl apply` vs `kubectl create`:**
+- `kubectl create`: Creates a resource. It fails if the resource already exists.
+- `kubectl apply`: Applies a configuration to a resource. It creates the resource if it does not exist, and updates the resource if it does exist, making it suitable for both creating and updating resources.
+
+**`kubectl apply` vs `kubectl replace`:**
+- `kubectl replace`: Deletes and re-creates the resource. It requires a complete resource definition.
+- `kubectl apply`: Updates the resource with changes defined in the YAML file, without needing a complete definition. It is safer for updates as it doesn't require deleting the resource.
+
+### Other Relevant Commands and Concepts
+
+**What is a manifest file?**
+- A manifest file in Kubernetes is a YAML or JSON file that defines one or more resources. It specifies the desired state of the resources that Kubernetes should maintain.
+
+**How does `kubectl edit` work?**
+- `kubectl edit` opens the configured editor (set via `EDITOR` environmental variable), allowing you to modify the live configuration of a specified resource directly. It applies the changes on saving and exiting the editor.
+
+**How does `kubectl replace` work?**
+- `kubectl replace -f resource.yaml` replaces a resource based on a YAML or JSON file. The file must include a full definition of the resource, which replaces the existing resource.
+
+**How does `kubectl apply -f /path/to/dir` work?**
+- This command applies all YAML configurations found in the specified directory to resources in the cluster. It's useful for managing multiple resources or complex configurations.
+
+**How does `kubectl expose` work?**
+- It creates a new service that exposes an existing resource (like pods or deployments) to the network. The service type and exposed ports are specified in the command.
+- Example:
+  ```bash
+  kubectl expose deployment nginx --port=80 --dry-run=client -o yaml
+  ```
+  This generates the YAML for a service exposing the `nginx` deployment on port 80, without creating the service (`--dry-run=client`).
+
+**Difference between `--dry-run=client`, `--dry-run=server`, and `--dry-run`:**
+
+dry-run=client`: Client-side simulation; the command is processed but not sent to the server.
+- `--dry-run=server`: Server-side simulation; the server processes the command without creating the resource.
+- `--dry-run`: In older kubectl versions, equivalent to `--dry-run=client`.
+
+**What is the `-o` flag used for? What are the possible values?**
+- The `-o` (output) flag specifies the format in which to output the details of a command's result.
+- Possible values include `json`, `yaml`, `name`, `wide`, `custom-columns`, and more, allowing for different views and data handling of the command outputs.
