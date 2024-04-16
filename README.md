@@ -209,3 +209,139 @@ dry-run=client`: Client-side simulation; the command is processed but not sent t
 **What is the `-o` flag used for? What are the possible values?**
 - The `-o` (output) flag specifies the format in which to output the details of a command's result.
 - Possible values include `json`, `yaml`, `name`, `wide`, `custom-columns`, and more, allowing for different views and data handling of the command outputs.
+
+# KUBECTL SCHEDULER
+
+### 1. What is Scheduler in Kubernetes?
+
+In Kubernetes, the scheduler is a critical control plane process which assigns newly created pods to nodes. Pods are the smallest, most basic deployable objects in Kubernetes that can be created and managed. The scheduler’s primary role is to match each unassigned pod to a node that it can run on, based on various criteria such as resource availability, constraints, affinities, and other factors.
+
+### 2. How Does Scheduler Work in Kubernetes?
+
+The Kubernetes Scheduler operates in several steps:
+
+- **Filtering:** Initially, the scheduler filters out nodes that do not meet the requirements of the pod. Requirements might include specific resource needs, node selectors, and affinity/anti-affinity settings.
+- **Scoring:** After filtering, the scheduler ranks the remaining nodes to find the best fit for the pod. It scores each node based on several criteria, including resource availability, pod affinity, and taints and tolerations.
+- **Binding:** Once a node has been selected, the scheduler initiates the binding process by sending a binding request to the Kubernetes API. This step effectively assigns the pod to the node.
+
+### 3. What is `nodeName` in Kubernetes?
+
+`nodeName` is a field in the PodSpec that can be used to specify a particular node where a pod should be placed. By setting the `nodeName` field, you can bypass the scheduler to place a pod on a specific node, provided the node has sufficient resources and all other requirements are met.
+
+### 4. How to Manually Schedule a Pod to a Specific Node?
+
+To manually schedule a pod to a specific node without the intervention of the scheduler, you can set the `nodeName` field in the pod's configuration. Here’s a simple example of a pod specification with `nodeName`:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+spec:
+  containers:
+  - name: mycontainer
+    image: nginx
+  nodeName: mynode-01
+```
+
+This configuration ensures that the pod `mypod` will be deployed directly to the node named `mynode-01`.
+
+### 5. How Does Binding Work in Kubernetes?
+
+Binding in Kubernetes is the process by which a pod is formally assigned to a node. This is the final step performed by the scheduler and is crucial for the pod’s lifecycle.
+
+- **API Request:** The scheduler sends a `POST` request to the Kubernetes API server with the pod’s name and the chosen node.
+- **API Server Update:** The API server updates the pod object with `nodeName` set to the chosen node, which indicates that the pod should be placed on that node.
+- **Pod Scheduling:** Once `nodeName` is set, the Kubelet on the targeted node watches for new pods assigned to it. When it sees the pod with its node name, it starts the pod creation process according to the pod specification.
+
+This sequence of steps—from the scheduler’s decision-making to the binding and pod startup—illustrates how Kubernetes efficiently manages pod placement and execution in a cluster environment. By understanding these components and their interaction, users can better manage and optimize their Kubernetes deployments.
+
+# LABELS AND SELECTORS
+
+### 1. What is Label in Kubernetes?
+
+In Kubernetes, a **label** is a key-value pair associated with a resource (such as a pod, service, or deployment) that is used to organize, select, and group resources within the cluster. Labels are intended to be used by users to mark characteristics of objects that are significant and meaningful to them but do not directly imply semantics to the core system. They can be used to indicate properties like versions, environments, levels of stability, tiers, and ownership.
+
+For example, you might label pods that run the Nginx server with `app=nginx`.
+
+### 2. What is Selector in Kubernetes?
+
+A **selector** is a way of implementing a query to select one or more resources that have labels matching the selector's conditions. Selectors can be used in client commands, for specifying resource constraints on pods, and by services and deployments to determine what pods they apply to. There are generally two types of selectors:
+
+- **Equality-based selectors** allow filtering by label keys and values. These selectors specify that labels must exactly match some specified values.
+- **Set-based selectors** allow filtering keys according to a set of values.
+
+### 3. How to Use Selector While Searching for Pods?
+
+Selectors can be used with various `kubectl` commands to filter resources according to specific labels. For instance, when you want to get a list of all pods that have a particular label configuration, you can use the `--selector` (or `-l`) option followed by the label query.
+
+### 4. Example: Using a Selector with `kubectl`
+
+To illustrate using a selector, let’s take the example command you provided:
+
+```bash
+kubectl get pods --selector app=nginx
+```
+
+This command will list all pods that have a label `app` with the value `nginx`. Here's what happens:
+
+- **`kubectl get pods`**: This part of the command asks for a list of all pods in the current namespace.
+- **`--selector app=nginx`**: This filters the list of pods to only include those where the label `app` is equal to `nginx`.
+
+### Explanation of Label and Selector in Context
+
+- **Labels** are used to apply identifiers to Kubernetes objects; these identifiers can be anything as long as they are meaningful to the user. They do not interact directly with the operation of the cluster unless used by a selector.
+- **Selectors** are where the operational utility of labels comes into play. Through selectors, Kubernetes can perform actions on groups of objects that meet certain labeling criteria, such as managing pods within a service or rolling out upgrades via deployments.
+
+
+# ANNOTATIONS
+
+### 1. What are Annotations in Kubernetes?
+
+**Annotations** are key-value pairs associated with Kubernetes objects, similar to labels. However, annotations are not intended to be used for identifying and selecting objects. The primary purpose of annotations is to store additional metadata to enrich Kubernetes objects with informational data that might be used by tools and libraries, or to convey non-identifying information to clients. This metadata can be large or small, structured or unstructured, and include characters not permitted by labels.
+
+### 2. How to Use Annotations in Kubernetes?
+
+Annotations are used in various ways:
+
+- **Documenting Information:** They can store descriptions for clients, such as details about configuration parameters, or build information about a deployment.
+- **Debugging Tool:** Annotations can help with debugging by providing checkpoints or markers.
+- **Tool Integration:** Many tools and controllers that operate on Kubernetes objects use annotations to store internal data. They might store statuses, checkpoints, or management information that helps the tool interact with Kubernetes objects more efficiently.
+
+### 3. How to Configure Annotations in Kubernetes?
+
+Configuring annotations is straightforward and similar to configuring labels, but with more flexibility regarding what data they can hold. Here’s how to add annotations to a Kubernetes object using a YAML file:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+  annotations:
+    imageregistry: "https://myregistry.com"
+    buildversion: "v1.2.3"
+    description: "This is an example pod for demonstration purposes."
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+```
+
+In this example:
+- The pod `mypod` has three annotations defined under the `metadata.annotations` field:
+  - `imageregistry`: Stores the URL of the image registry.
+  - `buildversion`: Indicates the version of the build that the pod is running.
+  - `description`: Provides a human-readable description of what the pod is used for.
+
+**To modify or add annotations**:
+- You can edit the pod or other object specifications using a command line tool like `kubectl`:
+  
+  ```bash
+  kubectl annotate pods mypod description="Updated description" --overwrite
+  ```
+  
+  This command updates the `description` annotation. The `--overwrite` flag allows modifying an existing annotation. Without it, you cannot change an existing annotation.
+
+### Conclusion
+
+Annotations provide a powerful way to include metadata related to Kubernetes objects, which can assist in management, integration with tools, or provide extra details for human operators. While they are similar to labels in syntax, their usage context significantly differs, focusing on information storage rather than object selection and interaction. Understanding when and how to use annotations effectively can greatly enhance the manageability and functionality of Kubernetes applications.
