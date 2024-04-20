@@ -346,7 +346,7 @@ In this example:
 
 Annotations provide a powerful way to include metadata related to Kubernetes objects, which can assist in management, integration with tools, or provide extra details for human operators. While they are similar to labels in syntax, their usage context significantly differs, focusing on information storage rather than object selection and interaction. Understanding when and how to use annotations effectively can greatly enhance the manageability and functionality of Kubernetes applications.
 
-# RESOURCE LIMITS
+# RESOURCE REQUESTS
 
 In Kubernetes, resource requests are a fundamental part of the pod specification, allowing you to specify the minimum amount of resources (CPU and memory) that a pod needs to run. By defining resource requests, you inform the Kubernetes scheduler about the resources a pod requires to operate correctly, which helps the scheduler make more intelligent decisions about where to place pods based on the available resources on each node.
 
@@ -397,3 +397,131 @@ spec:
 - **Efficiency**: By effectively managing resource allocation with requests, Kubernetes can optimize the utilization of underlying hardware, leading to more efficient use of system resources across the entire cluster.
 
 Resource requests are a critical part of Kubernetes pod specifications for ensuring that applications have the resources they need to perform optimally and reliably.
+
+# RESOURCE LIMITS
+
+Resource limits in Kubernetes play a crucial role in managing how much CPU and memory a pod can use on a node. They are part of the resource management features that Kubernetes offers to ensure that pods do not consume more than their fair share of resources on a node, which helps maintain the stability and efficiency of the node.
+
+### What are Resource Limits?
+
+Resource limits define the maximum amount of CPU and memory resources that a pod or container can use. Unlike resource requests, which guarantee a minimum amount of resources a pod needs to run, limits ensure that a pod does not exceed a specified resource amount.
+
+### How Resource Limits Work
+
+Here's how resource limits impact the running of pods in Kubernetes:
+
+#### 1. Preventing Resource Starvation
+
+By setting resource limits, Kubernetes can prevent a single pod or container from using up all the available resources on a node. This is crucial in a multi-tenant environment where multiple pods are running on the same node. Limits help ensure that no single pod can monopolize the node's resources, thereby supporting the stable operation of all other pods on the node.
+
+#### 2. Controlling Resource Usage
+
+Limits are enforced by the Kubernetes scheduler and the container runtime. If a container tries to use more CPU or memory than its limit, Kubernetes takes the following actions:
+
+- **CPU**: If a container attempts to use more CPU resources than its limit, Kubernetes uses CPU throttling to restrict the amount of CPU cycles the container can use. While the container will not be stopped or killed for exceeding its CPU limit, its CPU usage will be throttled down to the limit, which might slow down its performance.
+  
+- **Memory**: If a container exceeds its memory limit, it is at risk of being terminated or killed by the Kubernetes system (or the underlying container runtime like Docker). This termination happens because Kubernetes uses a process called Out-Of-Memory Killing (OOM Killer) where processes that are using more memory than allocated can be terminated to free up memory resources on the node.
+
+### Example of Resource Limits
+
+Here is an example of how to set resource limits for CPU and memory in a pod specification:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sample-pod
+spec:
+  containers:
+  - name: sample-container
+    image: nginx
+    resources:
+      limits:
+        memory: "1Gi"  # Limits the memory usage to 1 GiB
+        cpu: "500m"    # Limits the CPU usage to half a CPU unit
+```
+
+#### Explanation
+
+- **Memory Limit**: `1Gi` means that the container cannot use more than 1 gibibyte of memory. If the container tries to use more than this amount, it risks being killed by the OOM Killer.
+- **CPU Limit**: `500m` means the container is limited to using half of a CPU core. CPU resources are measured in millicores (where 1000m = 1 core). If the container attempts to use more CPU cycles, it will be throttled.
+
+### Impact of Resource Limits
+
+- **Efficiency**: Proper use of resource limits can help improve the efficiency of resource utilization on a node by preventing pods from using more resources than necessary.
+- **Reliability**: Setting appropriate limits can increase the reliability of the node and the cluster by preventing unexpected resource depletion, which can lead to system instability and downtime.
+- **Predictability**: With limits, the resource usage of pods becomes more predictable, which aids in capacity planning and management.
+
+Setting appropriate resource limits is a best practice in Kubernetes operations as it helps balance resource allocation, protect against resource starvation, and maintain the overall health and efficiency of the Kubernetes cluster.
+
+# RESOURCE LIMIT
+
+A **LimitRange** in Kubernetes is a policy used to specify limits on CPU and memory usage at the namespace level. It helps ensure efficient and fair resource use across all pods and containers in a namespace. Below are concise explanations of its components and their functions:
+
+### LimitRange Components
+
+- **`default`**: Specifies the default CPU and memory limits for all pods/containers in the namespace if they don't explicitly set them. This prevents unbounded resource usage which can destabilize the node.
+- **`defaultRequest`**: Sets the default CPU and memory request for all pods/containers if not specified. This ensures that pods have a baseline resource allocation for scheduling.
+- **`max`**: Defines the maximum CPU and memory limits that can be set on pods/containers in the namespace. This caps resource usage to prevent excessive consumption by any single pod/container.
+- **`min`**: Establishes the minimum CPU and memory requests that must be met for pods/containers. This avoids too low resource allocation that can lead to poor application performance.
+
+### Examples and Descriptions
+
+1. **Default Limit**
+   - Sets a CPU limit of 1 core and 1Gi of memory if not specified.
+   ```yaml
+   limits:
+     - type: Container
+       default:
+         cpu: "1"
+         memory: "1Gi"
+   ```
+
+2. **Default Request**
+   - Automatically requests 0.5 cores and 500Mi of memory for any pod without specific requests.
+   ```yaml
+   limits:
+     - type: Container
+       defaultRequest:
+         cpu: "500m"
+         memory: "500Mi"
+   ```
+
+3. **Maximum Limit**
+   - Ensures no container can use more than 2 cores and 2Gi of memory.
+   ```yaml
+   limits:
+     - type: Container
+       max:
+         cpu: "2"
+         memory: "2Gi"
+   ```
+
+4. **Minimum Request**
+   - Requires all containers to request at least 100m CPU and 100Mi memory.
+   ```yaml
+   limits:
+     - type: Container
+       min:
+         cpu: "100m"
+         memory: "100Mi"
+   ```
+
+A LimitRange object can contain ranges for the following resource types:
+
+- Pod: Total resources that all containers in the pod can consume.
+- Container: Resources that each individual container can consume.
+- PersistentVolumeClaim: Storage limits and requests for each PVC.
+
+### Explanation of Differences
+
+- **`default` vs `defaultRequest`**:
+  - `default` affects limits and is used if a limit is not specified by the pod/container.
+  - `defaultRequest` affects requests and is used if a request is not specified by the pod/container.
+- **`max` vs `min`**:
+  - `max` sets the upper allowed limit of CPU/memory usage.
+  - `min` sets the lower required threshold of CPU/memory that must be requested.
+
+### Summary
+
+A LimitRange is vital for controlling resource allocation in a Kubernetes namespace to maintain stability and efficiency. By setting defaults and boundaries, it ensures that resources are neither overused nor underutilized. Each component (`default`, `defaultRequest`, `max`, `min`) plays a unique role in managing these resource constraints effectively.
