@@ -525,3 +525,77 @@ A LimitRange object can contain ranges for the following resource types:
 ### Summary
 
 A LimitRange is vital for controlling resource allocation in a Kubernetes namespace to maintain stability and efficiency. By setting defaults and boundaries, it ensures that resources are neither overused nor underutilized. Each component (`default`, `defaultRequest`, `max`, `min`) plays a unique role in managing these resource constraints effectively.
+
+# RESOURCE QUOTA
+
+**Resource Quotas** in Kubernetes are used to limit the overall consumption of resources in a namespace. This allows administrators to manage how much of the total cluster resources a single namespace can consume, helping to prevent a single team or project from using up too many cluster resources.
+
+### How Resource Quotas Work
+
+A Resource Quota monitors the consumption of resources in a namespace, including CPU, memory, storage, and how many objects (like Pods, Services, or PersistentVolumeClaims) can be created. When set, the Kubernetes API server will deny any request that tries to exceed the quota.
+
+### Components of a Resource Quota
+
+A Resource Quota can limit the following types of resources:
+
+- **Compute Resource Quotas**:
+  - `limits.cpu`, `limits.memory`: Total limits on CPU and memory that can be used by all the Pods in a namespace.
+  - `requests.cpu`, `requests.memory`: Total requested amounts of CPU and memory that can be declared by all Pods in a namespace.
+
+- **Storage Resource Quotas**:
+  - `requests.storage`: Total amount of persistent storage that can be requested.
+  - `persistentvolumeclaims`: Number of Persistent Volume Claims that can be created.
+
+- **Object Count Quota**:
+  - `pods`, `configmaps`, `persistentvolumeclaims`, `services`, `secrets`, `replicationcontrollers`, `resourcequotas`: Limits on the number of each of these object types that can be created.
+
+- **Extended Resource Quotas** (like GPUs):
+  - `count/<resource_name>`: Limits on the number of extended resources (like custom resources not built into Kubernetes) that can be used.
+
+### Example of a Resource Quota
+
+Here’s an example of a Resource Quota configuration in YAML format:
+
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: example-quota
+  namespace: example-namespace
+spec:
+  hard:
+    pods: "10"
+    services: "5"
+    secrets: "10"
+    configmaps: "5"
+    persistentvolumeclaims: "4"
+    requests.storage: "10Gi"
+    requests.cpu: "4"
+    requests.memory: "16Gi"
+    limits.cpu: "10"
+    limits.memory: "32Gi"
+```
+
+### Explanation of This Example
+
+- **`pods`:** Maximum of 10 pods are allowed in the namespace.
+- **`services`:** Maximum of 5 services are allowed.
+- **`secrets`:** Limits the number of secrets to 10.
+- **`configmaps`:** A maximum of 5 configmaps are permitted.
+- **`persistentvolumeclaims`:** Only 4 PVCs can be created.
+- **`requests.storage`:** Total storage request across all PVCs cannot exceed 10 GiB.
+- **`requests.cpu` & `requests.memory`:** Total memory and CPU request across all pods cannot exceed 16 GiB and 4 CPU units.
+- **`limits.cpu` & `limits.memory`:** Total memory and CPU limits across all pods cannot exceed 32 GiB and 10 CPU units.
+
+### Options in Resource Quotas
+
+- **`spec.hard`**: This field specifies the hard limit on the resources listed. If any part of the quota is exceeded, the request will be denied in API transactions.
+- **`used`**: This field automatically appears in resource quota status and shows the current usage of each resource specified in the quota.
+
+### Benefits of Using Resource Quotas
+
+1. **Efficiency**: Helps ensure efficient use of resources in a multi-tenant cluster by preventing any single namespace from consuming too many resources.
+2. **Management**: Simplifies management of cluster resources by setting clear limits for resource usage and ensuring these limits are adhered to.
+3. **Cost Control**: Helps control costs by limiting resource overuse in environments where resource costs are a concern.
+
+Resource quotas are a vital tool in Kubernetes for administrators to enforce policy, prevent resource overuse, and manage cluster resources effectively across multiple users or teams.
