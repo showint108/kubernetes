@@ -345,3 +345,55 @@ In this example:
 ### Conclusion
 
 Annotations provide a powerful way to include metadata related to Kubernetes objects, which can assist in management, integration with tools, or provide extra details for human operators. While they are similar to labels in syntax, their usage context significantly differs, focusing on information storage rather than object selection and interaction. Understanding when and how to use annotations effectively can greatly enhance the manageability and functionality of Kubernetes applications.
+
+# RESOURCE LIMITS
+
+In Kubernetes, resource requests are a fundamental part of the pod specification, allowing you to specify the minimum amount of resources (CPU and memory) that a pod needs to run. By defining resource requests, you inform the Kubernetes scheduler about the resources a pod requires to operate correctly, which helps the scheduler make more intelligent decisions about where to place pods based on the available resources on each node.
+
+### What are Resource Requests?
+
+Resource requests are used to guarantee that a pod will have a certain baseline amount of resources available to it when it is scheduled. These requests are not limits — the pod can use more resources than its request if they are available on the node where it is running.
+
+### How Resource Requests Work
+
+When you create a pod, you can specify resource requests in the pod specification for each container in the pod. Here’s how Kubernetes uses this information:
+
+#### 1. Scheduling
+
+- **Node Selection**: During scheduling, Kubernetes looks at the resource requests for each container in a pod to determine the total amount of CPU and memory the pod will need. The scheduler then finds a node that has enough available CPU and memory to meet the pod’s requirements.
+- **Avoiding Overcommitment**: By considering resource requests during scheduling, Kubernetes tries to prevent resource overcommitment and ensures that pods have the resources they need to run properly. This helps maintain system stability and performance.
+
+#### 2. Resource Allocation
+
+- **Guaranteed Allocation**: Once a pod is scheduled on a node, the resources specified in the resource requests are reserved for it. The Kubernetes system ensures that these requested resources are available to the pod during its execution. This reservation is crucial for pods that require consistent resources and is a key component in Kubernetes' ability to run multiple applications reliably on the same cluster.
+
+### Examples of Resource Requests
+
+Here’s an example of how to set resource requests for CPU and memory in a pod specification:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+spec:
+  containers:
+  - name: example-container
+    image: nginx
+    resources:
+      requests:
+        memory: "512Mi"  # Requests 512 MiB of memory
+        cpu: "1"         # Requests 1 CPU unit
+```
+
+#### Explanation
+
+- **Memory Request**: `512Mi` means the pod requests 512 mebibytes of memory. Kubernetes guarantees that this amount of memory will be available to the pod, and it will not schedule the pod on a node that doesn’t have at least this amount of free memory.
+- **CPU Request**: `1` means the pod requests 1 whole CPU unit. One CPU, in Kubernetes, is roughly equivalent to one core of a CPU. The pod will have at least one core's worth of CPU time available, and it will be scheduled on a node that can provide this.
+
+### Impact of Resource Requests
+
+- **Performance and Stability**: Proper use of resource requests can significantly enhance the performance and stability of applications running on Kubernetes by preventing resource starvation and allowing the scheduler to make more informed placement decisions.
+- **Efficiency**: By effectively managing resource allocation with requests, Kubernetes can optimize the utilization of underlying hardware, leading to more efficient use of system resources across the entire cluster.
+
+Resource requests are a critical part of Kubernetes pod specifications for ensuring that applications have the resources they need to perform optimally and reliably.
